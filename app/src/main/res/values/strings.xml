@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">FoldHelper</string>
+    <string name="accessibility_service_description">Fold Helper Service</string>
 </resources>
