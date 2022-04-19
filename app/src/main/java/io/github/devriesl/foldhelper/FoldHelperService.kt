@@ -15,6 +15,8 @@ import android.util.Log
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+import io.github.devriesl.foldhelper.Constants.APP_BLACK_LIST
+import kotlin.math.abs
 
 class FoldHelperService : AccessibilityService() {
     private val sensorManager: SensorManager by lazy {
@@ -29,7 +31,7 @@ class FoldHelperService : AccessibilityService() {
         getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
     }
 
-    private var lastHingeAngle = 0f
+    private var lastHingeAngle: Float? = null
 
     private var screenUnlock: Boolean? = null
         set(value) {
@@ -42,6 +44,7 @@ class FoldHelperService : AccessibilityService() {
                     }
                     false -> {
                         sensorManager.unregisterListener(sensorEventListener)
+                        lastHingeAngle = null
                         foldingMode = FoldingMode.UNKNOWN
                     }
                     else -> {
@@ -56,6 +59,10 @@ class FoldHelperService : AccessibilityService() {
             if (field != value) { handleFoldingEvent(field, value) }
             field = value
         }
+
+    private var phoneModeApp: String? = null
+
+    private var tabletModeApp: String? = null
 
     private val sensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(sensorEvent: SensorEvent?) {
@@ -102,7 +109,7 @@ class FoldHelperService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event?.eventType == TYPE_WINDOW_STATE_CHANGED && event.packageName.isNotEmpty()) {
+        if (event?.eventType == TYPE_WINDOW_STATE_CHANGED && validatePackageName(event.packageName)) {
             val rect = Rect()
             event.source?.getBoundsInScreen(rect)
             if (rect.width() > FOREGROUND_MIN_SIZE && rect.height() > FOREGROUND_MIN_SIZE) {
@@ -128,10 +135,57 @@ class FoldHelperService : AccessibilityService() {
 
     private fun handleFoldingEvent(previousMode: FoldingMode, currentMode: FoldingMode) {
         Log.d(TAG, "handleFoldingEvent: Previous $previousMode, Current $currentMode")
+        if (currentMode == FoldingMode.TABLET_MODE) {
+            tabletModeApp?.let { launchApplication(it) }
+        } else if (currentMode == FoldingMode.PHONE_MODE) {
+            phoneModeApp?.let { launchApplication(it) }
+        }
     }
 
     private fun handleAppSwitchEvent(packageName: String) {
-        Log.d(TAG, "handleAppSwitchEvent: PackageName $packageName")
+        Log.d(TAG, "handleAppSwitchEvent: PackageName $packageName, HingeAngle $lastHingeAngle, FoldingMode $foldingMode")
+        lastHingeAngle?.let {
+            if (isDefiniteState(it)) {
+                when(foldingMode) {
+                    FoldingMode.PHONE_MODE -> phoneModeApp = packageName
+                    FoldingMode.TABLET_MODE -> tabletModeApp = packageName
+                    else -> {}
+                }
+            }
+        }
+    }
+
+    private fun isDefiniteState(hingeAngle: Float): Boolean {
+        return when {
+            abs(hingeAngle) < DEFINITE_STATE_MAX_ANGLE ||
+            abs(hingeAngle - 180) < DEFINITE_STATE_MAX_ANGLE -> {
+                true
+            }
+            else -> false
+        }
+    }
+
+    private fun launchApplication(packageName: String) {
+        Log.d(TAG, "launchApplication: $packageName")
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+        startActivity(launchIntent)
+    }
+
+    private fun validatePackageName(charSequence: CharSequence?): Boolean {
+        var valid = true
+
+        if (charSequence.isNullOrEmpty()) {
+            valid = false
+        } else {
+            APP_BLACK_LIST.forEach {
+                if (charSequence.contains(it)) {
+                    valid = false
+                    Log.d(TAG, "validatePackageName: Ignored $charSequence")
+                }
+            }
+        }
+
+        return valid
     }
 
     internal enum class FoldingMode {
@@ -142,5 +196,6 @@ class FoldHelperService : AccessibilityService() {
         private const val TAG = "FoldHelperService"
         private const val ASPECT_RATIO_16_10 = 1.6f
         private const val FOREGROUND_MIN_SIZE = 480
+        private const val DEFINITE_STATE_MAX_ANGLE = 10f
     }
 }
