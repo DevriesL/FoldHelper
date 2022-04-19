@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Rect
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -13,6 +14,7 @@ import android.hardware.SensorManager
 import android.util.Log
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
 
 class FoldHelperService : AccessibilityService() {
     private val sensorManager: SensorManager by lazy {
@@ -100,6 +102,13 @@ class FoldHelperService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (event?.eventType == TYPE_WINDOW_STATE_CHANGED && event.packageName.isNotEmpty()) {
+            val rect = Rect()
+            event.source?.getBoundsInScreen(rect)
+            if (rect.width() > FOREGROUND_MIN_SIZE && rect.height() > FOREGROUND_MIN_SIZE) {
+                handleAppSwitchEvent(event.packageName.toString())
+            }
+        }
     }
 
     override fun onInterrupt() {
@@ -121,6 +130,10 @@ class FoldHelperService : AccessibilityService() {
         Log.d(TAG, "handleFoldingEvent: Previous $previousMode, Current $currentMode")
     }
 
+    private fun handleAppSwitchEvent(packageName: String) {
+        Log.d(TAG, "handleAppSwitchEvent: PackageName $packageName")
+    }
+
     internal enum class FoldingMode {
         UNKNOWN, PHONE_MODE, TABLET_MODE
     }
@@ -128,5 +141,6 @@ class FoldHelperService : AccessibilityService() {
     companion object {
         private const val TAG = "FoldHelperService"
         private const val ASPECT_RATIO_16_10 = 1.6f
+        private const val FOREGROUND_MIN_SIZE = 480
     }
 }
