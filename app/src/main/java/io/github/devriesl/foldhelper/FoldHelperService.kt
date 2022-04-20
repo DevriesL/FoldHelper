@@ -66,6 +66,8 @@ class FoldHelperService : AccessibilityService() {
 
     private var tabletModeApp: String? = null
 
+    private var currentApp: String? = null
+
     private val sensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(sensorEvent: SensorEvent?) {
             sensorEvent?.values?.getOrNull(0)?.let { lastHingeAngle = it }
@@ -148,6 +150,7 @@ class FoldHelperService : AccessibilityService() {
 
     private fun handleAppSwitchEvent(packageName: String) {
         Log.d(TAG, "handleAppSwitchEvent: PackageName $packageName, HingeAngle $lastHingeAngle, FoldingMode $foldingMode")
+        currentApp = packageName
         lastHingeAngle?.let {
             if (isDefiniteState(it)) {
                 when(foldingMode) {
@@ -170,9 +173,14 @@ class FoldHelperService : AccessibilityService() {
     }
 
     private fun launchApplication(packageName: String) {
-        Log.d(TAG, "launchApplication: $packageName")
-        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-        startActivity(launchIntent)
+        if (packageName == currentApp) {
+            Log.d(TAG, "launchApplication: Skip current $packageName")
+        } else {
+            Log.d(TAG, "launchApplication: $packageName")
+            packageManager.getLaunchIntentForPackage(packageName)?.let { intent ->
+                startActivity(intent)
+            }
+        }
     }
 
     private fun validatePackageName(charSequence: CharSequence?): Boolean {
