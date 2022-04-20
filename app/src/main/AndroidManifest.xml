@@ -28,6 +28,7 @@
         <service
             android:name=".FoldHelperService"
             android:exported="false"
+            android:configChanges="screenSize|screenLayout"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:settingsActivity="io.github.devriesl.foldhelper.SettingsActivity">
             <meta-data
