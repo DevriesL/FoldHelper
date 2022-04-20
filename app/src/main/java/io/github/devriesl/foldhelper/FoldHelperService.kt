@@ -38,11 +38,13 @@ class FoldHelperService : AccessibilityService() {
             if (field != value) {
                 when(value) {
                     true -> {
+                        Log.d(TAG, "Screen Unlock")
                         val sensor = sensorManager.getDefaultSensor(Sensor.TYPE_HINGE_ANGLE)
                         sensorManager.registerListener(sensorEventListener, sensor, SensorManager.SENSOR_DELAY_NORMAL)
                         foldingMode = calcFoldingMode()
                     }
                     false -> {
+                        Log.d(TAG, "Screen Lock")
                         sensorManager.unregisterListener(sensorEventListener)
                         lastHingeAngle = null
                         foldingMode = FoldingMode.UNKNOWN
@@ -81,7 +83,9 @@ class FoldHelperService : AccessibilityService() {
                     screenUnlock = true
                 }
                 Intent.ACTION_SCREEN_OFF -> {
-                    screenUnlock = false
+                    if (keyguardManager.isKeyguardLocked) {
+                        screenUnlock = false
+                    }
                 }
                 Intent.ACTION_SCREEN_ON -> {
                     if (!keyguardManager.isKeyguardLocked) {
