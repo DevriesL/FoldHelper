@@ -32,6 +32,10 @@ class FoldHelperService : AccessibilityService() {
         getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
     }
 
+    private val appSharedPrefs: AppSharedPrefs by lazy {
+        AppSharedPrefs.getInstance(applicationContext)
+    }
+
     private var lastHingeAngle: Float? = null
 
     private var screenUnlock: Boolean? = null
