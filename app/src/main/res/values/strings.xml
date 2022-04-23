@@ -1,4 +1,13 @@
 <resources>
     <string name="app_name">FoldHelper</string>
-    <string name="accessibility_service_description">Fold Helper Service</string>
+    <string name="accessibility_service_description">FoldHelper Service,
+        Enable it to manage foreground applications separately on the foldable device\'s dual-screen.</string>
+
+    <string name="ignore_phone_mode_switch_title">Ignore Phone Mode</string>
+    <string name="ignore_phone_mode_switch_desc">Do not switch application in phone mode.</string>
+    <string name="forget_next_day_switch_title">Forget Next Day</string>
+    <string name="forget_next_day_switch_desc">Forget foreground applications on next day.</string>
+    <string name="skip_recent_launch_switch_title">Skip Recent Launch</string>
+    <string name="skip_recent_launch_switch_desc">Do not launch application if user open an application in 5 secs.</string>
+
 </resources>

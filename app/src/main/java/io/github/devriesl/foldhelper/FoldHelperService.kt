@@ -17,6 +17,9 @@ import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
 import io.github.devriesl.foldhelper.Constants.APP_BLACK_LIST
+import io.github.devriesl.foldhelper.Constants.FORGET_NEXT_DAY
+import io.github.devriesl.foldhelper.Constants.IGNORE_PHONE_MODE_KEY
+import io.github.devriesl.foldhelper.Constants.SKIP_RECENT_LAUNCH
 import kotlin.math.abs
 
 class FoldHelperService : AccessibilityService() {
@@ -35,6 +38,15 @@ class FoldHelperService : AccessibilityService() {
     private val appSharedPrefs: AppSharedPrefs by lazy {
         AppSharedPrefs.getInstance(applicationContext)
     }
+
+    private val ignorePhoneMode: Boolean
+        get() = appSharedPrefs.getSwitchPreference(IGNORE_PHONE_MODE_KEY)
+
+    private val forgetNextDay: Boolean
+        get() = appSharedPrefs.getSwitchPreference(FORGET_NEXT_DAY)
+
+    private val skipRecentLaunch: Boolean
+        get() = appSharedPrefs.getSwitchPreference(SKIP_RECENT_LAUNCH)
 
     private var lastHingeAngle: Float? = null
 
@@ -153,7 +165,7 @@ class FoldHelperService : AccessibilityService() {
         Log.d(TAG, "handleFoldingEvent: Previous $previousMode, Current $currentMode")
         if (currentMode == FoldingMode.TABLET_MODE) {
             tabletModeApp?.let { launchApplication(it) }
-        } else if (currentMode == FoldingMode.PHONE_MODE) {
+        } else if (currentMode == FoldingMode.PHONE_MODE && ignorePhoneMode.not()) {
             phoneModeApp?.let { launchApplication(it) }
         }
     }

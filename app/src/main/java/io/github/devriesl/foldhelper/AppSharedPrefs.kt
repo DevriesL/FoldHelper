@@ -9,6 +9,24 @@ class AppSharedPrefs private constructor(context: Context) {
         Context.MODE_PRIVATE
     )
 
+    private val cachedPrefs: HashMap<String, Any> = hashMapOf()
+
+    fun getSwitchPreference(key: String, default: Boolean = false): Boolean {
+        return if (cachedPrefs.containsKey(key)) {
+            (cachedPrefs[key] as Boolean)
+        } else {
+            sharedPrefs.getBoolean(key, default).also { cachedPrefs[key] = it }
+        }
+    }
+
+    fun setSwitchPreference(key: String, value: Boolean) {
+        with(sharedPrefs.edit()) {
+            putBoolean(key, value)
+            commit()
+        }
+        cachedPrefs[key] = value
+    }
+
     companion object {
         const val SHARED_PREFS_NAME = "fold_helper"
 
